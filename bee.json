@@ -1,0 +1,22 @@
+{
+    "version": 0,
+    "gopm": {
+        "enable": false,
+        "install": false
+    },
+    "go_install": false,
+    "watch_ext": [],
+    "dir_structure": {
+        "watch_all": false,
+        "controllers": "",
+        "models": "",
+        "others": [
+            "/Users/huiren/Codes/go/src/github.com/micln/gomoku-AI"
+        ]
+    },
+    "cmd_args": [],
+    "envs": [],
+    "database": {
+        "driver": "mysql"
+    }
+}%

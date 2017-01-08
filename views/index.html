@@ -1,0 +1,186 @@
+<html>
+    <head>
+        <title>gomoku</title>
+        <style type="text/css">
+        	.clear-fix {
+        		clear: both;
+        	}
+        	.board .row .col {
+        		border-radius: 50%;
+        		border: 1px solid;
+        		width: 30px;
+        		height: 30px;
+        		float: left;
+        	}
+        	.board .row {
+        		background: #ff0;
+        	}
+        	.board .row .col {
+        		margin: 5px;
+        	}
+        	.board .row .col.empty {
+    		    cursor: pointer;
+    		    /*background: #aaa;*/
+        	}
+        	.board .row .col.c_black {
+    		    background: #000;
+        	}
+        	.board .row .col.c_white {
+    		 background: #fff;
+        	}
+        	.board .row .col.empty:hover {
+        		outline: 5px solid #00e5ff;
+        	}
+        	
+        </style>
+    </head>
+<body>
+
+<center>
+<div id="board">
+<div class="wrap">
+	<div class="head">
+		<button>Start</button>
+		<button>Undo</button>
+	</div>
+	<hr>
+	<div class="body"></div>
+</div>
+</div>
+</center>
+<script type="text/javascript" src="//huiren.dev/js/pc_home/jquery.min.js"></script>
+<script type="text/javascript">
+
+	var C_BLACK = 'black';
+	var C_WHITE = 'white';
+	
+	function Board(opts) {
+
+		var that = this;
+		var bSize = 15;
+
+		this.currentChess = C_BLACK;
+		this.map = [];
+		this.history = [];
+
+		var sdk = opts.sdk;
+		sdk.start();
+		
+		this.boardDiv = $(opts.boardDiv);
+		this.boardDiv.addClass('board');
+
+		var $wrap = this.boardDiv.find('.wrap');
+		var $head = $wrap.find('.head');
+		var $body = $wrap.find('.body');
+
+		for (var i=0; i<bSize; i++) {
+			var ra = [];
+			var $row = $('<div>', {
+				class : 'row'
+			});
+			for (var j=0; j<bSize; j++) {
+				ra.push(0);
+				var $col = $('<div>', {
+					class : 'col empty ' + 'p' +  i + '_' + j,
+					'data-x' : i,
+					'data-y' : j,
+					'data-c' : ''
+				})
+				$col.appendTo($row);
+			}
+			that.map.push(ra);
+			$row.append($('<div>', {
+				class : 'clear-fix'
+			}))
+			$row.appendTo($body);
+		}
+
+		this.getXYDom = function(x,y){
+			return $('.p'+x+'_'+y);
+		}
+
+		this.goChess = function (x,y,c) {
+
+			if (that.map[x][y]) {
+				alert('这个地方有棋子');
+				return;
+			}
+
+			that.map[x][y] = c;
+
+			var $d = this.getXYDom(x,y);
+			$d.removeClass('empty')
+			.addClass('c_'+c)
+			.data('c', c);
+
+			that.currentChess = that.currentChess === C_BLACK ? C_WHITE : C_BLACK;
+		}
+
+		$('.board .row .col.empty').click(function(){
+
+			$this = $(this);
+			var x = $this.data('x'),
+			 	y = $this.data('y');
+
+			that.goChess(x,y,that.currentChess);
+			(function(currentChess){
+				sdk.humanGo(x,y, function(data){
+					var p = data.point;
+					that.goChess(p.X, p.Y, currentChess)
+
+					var sm = data.scoreMaps;
+					for (var i=0;i<bSize;i++){
+						for (var j=0;j<bSize;j++) if (!that.map[i][j]) {
+							that.getXYDom(i,j).text(sm[i][j])
+						}
+					}
+				});	
+			}(that.currentChess));
+		
+
+			$this.unbind('click');
+		});
+
+	}
+
+
+	function AjaxSDK(opts) {
+
+		var clientId = null;
+
+		this.start = function() {
+			this.__request('/game/start',{},function(data){
+				clientId = data['Id'];
+			})
+		}
+		this.humanGo = function(x,y, callback) {
+			this.__request('/game/humango', {x:x, y:y}, callback)
+		}
+
+		this.__request = function(uri, data, callback) {
+			var url = 'http://localhost:8080';
+			url += uri;
+
+			data['clientId'] = clientId;
+
+			$.get(url, data, function(data){
+				console.log(data);
+				if ( data.success ) {
+					callback(data.content);					
+				}else{
+					alert(data.message);
+				}
+			});
+		}
+	}
+
+	var sdk = new AjaxSDK({});
+	var board = new Board({
+		"boardDiv": "#board",
+		sdk: sdk
+	});
+
+
+</script>
+</body>
+</html>
