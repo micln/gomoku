@@ -35,7 +35,6 @@ func (c *GameController) HumanGo() {
 	board := robot.Board
 
 	board.GoChess(gomoku_AI.NewPoint(x, y), gomoku_AI.C_Player)
-
 	maps := board.CalcScoreMaps(gomoku_AI.C_Robot)
 
 	p := robot.BestStep(4)

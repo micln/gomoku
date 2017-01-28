@@ -17,6 +17,7 @@
         	}
         	.board .row .col {
         		margin: 5px;
+        		color: #f00;
         	}
         	.board .row .col.empty {
     		    cursor: pointer;
@@ -126,7 +127,6 @@
 			(function(currentChess){
 				sdk.humanGo(x,y, function(data){
 					var p = data.point;
-					that.goChess(p.X, p.Y, currentChess)
 
 					var sm = data.scoreMaps;
 					for (var i=0;i<bSize;i++){
@@ -134,6 +134,8 @@
 							that.getXYDom(i,j).text(sm[i][j])
 						}
 					}
+
+					that.goChess(p.X, p.Y, currentChess)
 				});	
 			}(that.currentChess));
 		
