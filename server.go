@@ -5,25 +5,19 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/astaxie/beego"
+	"github.com/gin-gonic/gin"
+	"github.com/micln/go-utils"
 	"github.com/micln/gomoku-AI"
 )
 
 type Server struct {
 	Clients map[string]*Client
-
-	beeApp *beego.App
 }
 
 func NewServer() *Server {
 	serv := &Server{
 		Clients: make(map[string]*Client),
-		beeApp:  beego.NewApp(),
 	}
-
-	//beego.BConfig.WebConfig.Session.SessionOn = true
-	//beego.BConfig.WebConfig.Session.SessionProvider = `file`
-	//beego.BConfig.WebConfig.Session.SessionProviderConfig = `./tmp`
 
 	return serv
 }
@@ -56,44 +50,54 @@ func genClientId() string {
 }
 
 func (s *Server) Start() {
-	s.beeApp.Handlers.AddAuto(&GameController{})
-	s.beeApp.Run()
 
-	return
-	//
-	//response := func(success bool, content interface{}, message string) interface{} {
-	//	m := make(map[string]interface{})
-	//	m[`success`] = success
-	//	m[`content`] = content
-	//	m[`message`] = message
-	//
-	//	return m
-	//}
-	//
-	//s.beeApp.Handlers.Get(`/`, func(ctx *context.Context) {
-	//	ctx.ResponseWriter.Write(responseFile(`views/index.html`))
-	//})
-	//
-	//s.beeApp.Handlers.Get(`/start`, func(ctx *context.Context) {
-	//	m := make(map[string]int)
-	//	m[`clientId`] = s.NewClient()
-	//
-	//	ctx.Output.JSON(response(true, m, ``), true, false)
-	//})
-	//
-	//s.beeApp.Handlers.Get(`/human-go`, func(ctx *context.Context) {
-	//
-	//	clientId := go_utils.Intval(ctx.Input.Query(`clientId`))
-	//	x := go_utils.Intval(ctx.Input.Query(`x`))
-	//	y := go_utils.Intval(ctx.Input.Query(`y`))
-	//
-	//	rb := s.Clients[clientId]
-	//	p := rb.HumanGo(x, y)
-	//
-	//	ctx.Output.JSON(response(true, p, ``), true, false)
-	//})
-	//
-	//s.beeApp.Run()
+	router := gin.Default()
+	{
+		h5 := router.Group("/h5")
+		{
+			h5.GET("/", func(ctx *gin.Context) {
+				ctx.File(`views/index.html`)
+			})
+		}
+
+		api := router.Group("/api")
+		{
+			api.GET("/start", func(ctx *gin.Context) {
+				client := s.NewClient()
+				ctx.JSON(200, AjaxSuccess(client))
+			})
+			api.GET("/fire-human-go", func(ctx *gin.Context) {
+
+				id, _ := ctx.GetQuery("clientId")
+				ix, _ := ctx.GetQuery(`x`)
+				iy, _ := ctx.GetQuery(`y`)
+				x := go_utils.Intval(ix)
+				y := go_utils.Intval(iy)
+
+				if id == "" {
+					ctx.JSON(401, AjaxError(nil, "参数缺失"))
+					return
+				}
+
+				clt := s.Clients[id]
+
+				robot := clt.Robot
+				board := robot.Board
+
+				board.GoChess(gomoku_AI.NewPoint(x, y), gomoku_AI.C_Player)
+				maps := board.CalcScoreMaps(gomoku_AI.C_Robot)
+
+				p := robot.BestPoint(1)
+				robot.GoChess(p, gomoku_AI.C_Robot)
+
+				ctx.JSON(200, AjaxSuccess(map[string]interface{}{
+					`scoreMaps`: maps,
+					`point`:     p,
+				}))
+			})
+		}
+	}
+	router.Run(":8080")
 }
 
 func responseFile(filename string) []byte {

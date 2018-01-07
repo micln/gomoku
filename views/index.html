@@ -49,7 +49,7 @@
 </div>
 </div>
 </center>
-<script type="text/javascript" src="//huiren.dev/js/pc_home/jquery.min.js"></script>
+<script type="text/javascript" src="//laputa.mac/js/pc_home/jquery.min.js"></script>
 <script type="text/javascript">
 
 	var C_BLACK = 'black';
@@ -131,7 +131,8 @@
 					var sm = data.scoreMaps;
 					for (var i=0;i<bSize;i++){
 						for (var j=0;j<bSize;j++) if (!that.map[i][j]) {
-							that.getXYDom(i,j).text(sm[i][j])
+							var t = sm[i][j] == 1<<30 ? '' : sm[i][j];
+							that.getXYDom(i,j).text(t)
 						}
 					}
 
@@ -151,12 +152,12 @@
 		var clientId = null;
 
 		this.start = function() {
-			this.__request('/game/start',{},function(data){
+			this.__request('/api/start',{},function(data){
 				clientId = data['Id'];
 			})
 		}
 		this.humanGo = function(x,y, callback) {
-			this.__request('/game/humango', {x:x, y:y}, callback)
+			this.__request('/api/fire-human-go', {x:x, y:y}, callback)
 		}
 
 		this.__request = function(uri, data, callback) {
